@@ -52,21 +52,32 @@
 
 /* USER CODE BEGIN PV */
 uint32_t last = 0;
+int set = 0;
 int16_t Speed;
+int i,o;
+//int16_t difference = 0;
 PID_t angle = {
-  .Kp = 2,
+  .Kp = 1.5,
   .Ki = 0,
-  .Kd = 0.1,
+  .Kd = 0.2,
   .outmax = 100,
   .outmin = -100,
 };
 PID_t speed = {
-  .Kp = 1,
+  .Kp = 1.3,
   .Ki = 0,
   .Kd = 0,
-  .outmax = 60,
-  .outmin = -60,
+  .outmax = 50,
+  .outmin = -50,
 };
+// PID_t place = {
+//   .Kp = 0.5,
+//   .Ki  =0.01,
+//   .Kd = 0.2,
+//   .outmax = 100,
+//   .outmin = -100,
+// };
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -128,32 +139,67 @@ int main(void)
   ins_data_t *ins = ins_data();
   char buff[256];
   OLED_Clear();
-  while (1)
-  {
-     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET) {//改变角度
-       angle.target = 50;
-       while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET);
-     }
-     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_SET) {//恢复水平
-       angle.target = 0;
-       while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_SET);
-     }
+  __HAL_TIM_SET_COUNTER(&htim1, 0);
+  if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET) {//和屏幕的交互
+    o = 1;
+  }
+  if (o = 1) {
+    while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET){}
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET) {
+      while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET){}
+      OLED_ShowString(10, 0, "please select mode", 12, 0);
+      OLED_ShowString(2, 5, "mode1", 12, 0);
+      OLED_ShowString(60, 5, "Stay tuned", 12, 0);
+      for (i = 0; i <= 100; i++);
+    }
+
+    while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET){}
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET) {
+      OLED_Clear();
+      for (i = 0; i <= 50; i++)
+      {
+        OLED_ShowString(20, 3, "mode1-balance", 16, 0);
+      }
+      OLED_Clear();
+      o = 0;
+    }
+  }
+  while (1) {
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET) {//改变角度
+      //set = 1;
+      angle.target = 50;
+      while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET);
+    }
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_SET) {//恢复水平
+      //set = 0;
+      angle.target = 0;
+      while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_SET);
+    }
     ins_update();
 
     HAL_UART_Transmit(&huart1, (uint8_t *)buff, strlen(buff), HAL_MAX_DELAY);
+    //if (set == 0) {
     OLED_Showdecimal(3, 1, angle.target, 3, 2, 12, 0);
     OLED_Showdecimal(3, 3, angle.actual, 3, 2, 12, 0);
     OLED_Showdecimal(3, 5, speed.target, 3, 2, 12, 0);
     OLED_Showdecimal(3, 7, speed.actual, 3, 2, 12, 0);
+    //}
+    // if (set == 1) {
+    //   OLED_Showdecimal(3, 1, place.target, 3, 2, 12, 0);
+    //   OLED_Showdecimal(3, 3, place.actual, 3, 2, 12, 0);
+    //   OLED_Showdecimal(3, 5, speed.target, 3, 2, 12, 0);
+    //   OLED_Showdecimal(3, 7, speed.actual, 3, 2, 12, 0);
+    // }
     if (HAL_GetTick() - last >= 20){
       uint32_t t=HAL_GetTick();
       last = t;
       sprintf(buff, "%.3f, %.3f, %.3f, %.2f, %.2f, %.2f, %.2f\n",
               ins->roll, ins->pitch, ins->yaw,                        // 姿态角 °
               angle.target, angle.actual, speed.target, speed.actual);// PID：目标角度，实际角度，实际速度，目标速度
-    }
 
-    HAL_Delay(10);
+    }
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -204,39 +250,65 @@ void SystemClock_Config(void)
      if (htim->Instance != TIM3) {
       return;
      }
-     if (++Count1 >= 40)//每40ms一次
-     {
-       Count1 = 0;
-     angle.actual = ins_data()->roll;
-     PID_Update(&angle);
-     //输出限幅,,,,,看了下数据，速度一直很低，所以无需限制(还没改成结构体
-     // if (angle_out>100) {angle_out = 100;}
-     // else if (angle_out<-100) {angle_out = -100;}
-     // else {
-     //   angle_Errorint += angle_Error0;
+    //if (set == 0) {//雪糕棒保持水平
+      if (++Count1 >= 40)//每40ms一次
+      {
+        Count1 = 0;
+        angle.actual = ins_data()->roll;
+        PID_Update(&angle);
         if(angle.errorint < -500) {angle.errorint = -500;}
         if(angle.errorint >  500) {angle.errorint =  500;}
-     // }
-     //if (angle_target == 0) angle_Errorint = 0;
-       //防止速度过小，导致pwm过小，电机转不起来
-       if (angle.out > 0.1  && angle.out < 5 ) angle.out =  5;
-       if (angle.out < -0.1 && angle.out > -5) angle.out = -5;
-       speed.target = angle.out;
-     }
-  if (++Count2 >= 40)//每40ms一次
-  {
-    Count2 = 0;
-    Speed = __HAL_TIM_GET_COUNTER(&htim1);
-    __HAL_TIM_SET_COUNTER(&htim1, 0);
-    speed.actual = Speed*100.0/ SPEED_FULL_SCALE;
-    PID_Update(&speed);
-      if(speed.errorint < -500) {speed.errorint = -500;}
-      if(speed.errorint >  500) {speed.errorint =  500;}
-    }
-    if (speed.target == 0) speed.errorint = 0;
-    if (speed.out >0.1  && speed.out < 10 ) speed.out =  10;
-    if (speed.out < -0.1 && speed.out > -10) speed.out = -10;
-    Motor_Set(speed.out);
+        //防止速度过小，导致pwm过小，电机转不起来
+        if (angle.out >  0.1 && angle.out <  5) angle.out =  5;
+        if (angle.out < -0.1 && angle.out > -5) angle.out = -5;
+        speed.target = angle.out;
+      }
+      if (++Count2 >= 40)//每40ms一次
+      {
+        Count2 = 0;
+        Speed = __HAL_TIM_GET_COUNTER(&htim1);
+        __HAL_TIM_SET_COUNTER(&htim1, 0);
+        speed.actual = Speed*100.0/ SPEED_FULL_SCALE;
+        PID_Update(&speed);
+        if(speed.errorint < -500) {speed.errorint = -500;}
+        if(speed.errorint >  500) {speed.errorint =  500;}
+      }
+      if (speed.target == 0) speed.errorint = 0;
+      if (speed.out >  0.1 && speed.out <  10) speed.out =  10;
+      if (speed.out < -0.1 && speed.out > -10) speed.out = -10;
+      Motor_Set(speed.out);
+    //}
+    // if (set == 1) {//本来想着反过来电机保持水平，暂时还没搞明白，先留着
+    //   if (++Count1 >= 40)//每40ms一次
+    //   {
+    //     Count1 = 0;
+    //     place.target = ins_data()->roll / 360 * 540;
+    //     place.actual = __HAL_TIM_GET_COUNTER(&htim1) - 500;            
+    //     PID_Update(&place);
+    //     if(place.errorint < -500) {place.errorint = -500;}
+    //     if(place.errorint >  500) {place.errorint =  500;}
+    //     //防止速度过小，导致pwm过小，电机转不起来
+    //     if (place.out >  0.1 && place.out <  5) place.out =  5;
+    //     if (place.out < -0.1 && place.out > -5) place.out = -5;
+    //     speed.target = place.out;
+    //   }
+    //   if (++Count2 >= 40)//每40ms一次
+    //   {
+    //     Count2 = 0;
+    //     difference = __HAL_TIM_GET_COUNTER(&htim1) - Speed - 500;
+    //     Speed = __HAL_TIM_GET_COUNTER(&htim1) - 500;
+    //     //__HAL_TIM_SET_COUNTER(&htim1, 0);
+    //     speed.actual = difference * 100.0 / SPEED_FULL_SCALE;
+    //     PID_Update(&speed);
+    //     if(speed.errorint < -500) {speed.errorint = -500;}
+    //     if(speed.errorint >  500) {speed.errorint =  500;}
+    //   }
+    //   if (speed.target == 0) speed.errorint = 0;
+    //   if (speed.out >  0.1 && speed.out <  10) speed.out =  10;
+    //   if (speed.out < -0.1 && speed.out > -10) speed.out = -10;
+    //   Motor_Set(speed.out);
+    //   if (place.error0 > -5 && place.error0 < 5)   __HAL_TIM_SET_COUNTER(&htim1, 0);
+    // }
  }
 /* USER CODE END 4 */
 

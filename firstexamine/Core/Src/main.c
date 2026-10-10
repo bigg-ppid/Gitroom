@@ -40,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define  SPEED_FULL_SCALE 54.0
+#define  SPEED_FULL_SCALE 54.0 //一轮满速度计数
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -141,7 +141,7 @@ int main(void)
   OLED_Clear();
   __HAL_TIM_SET_COUNTER(&htim1, 0);
   if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET) {//和屏幕的交互
-    o = 1;
+    o = 1;//本来觉得可以直接if（按钮状态），但是有问题，所以加入中间变量。
   }
   if (o = 1) {
     while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET){}
@@ -153,7 +153,7 @@ int main(void)
       for (i = 0; i <= 100; i++);
     }
 
-    while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET){}
+    while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET){}//目前只有一个模式，所以只等待B0
     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET) {
       OLED_Clear();
       for (i = 0; i <= 50; i++)
@@ -251,7 +251,7 @@ void SystemClock_Config(void)
       return;
      }
     //if (set == 0) {//雪糕棒保持水平
-      if (++Count1 >= 40)//每40ms一次
+      if (Count1++ >= 40)//每40ms一次
       {
         Count1 = 0;
         angle.actual = ins_data()->roll;
@@ -263,19 +263,19 @@ void SystemClock_Config(void)
         if (angle.out < -0.1 && angle.out > -5) angle.out = -5;
         speed.target = angle.out;
       }
-      if (++Count2 >= 40)//每40ms一次
+      if (Count2++ >= 40)//每40ms一次
       {
         Count2 = 0;
-        Speed = __HAL_TIM_GET_COUNTER(&htim1);
+        Speed = __HAL_TIM_GET_COUNTER(&htim1);//只记录一轮的数
         __HAL_TIM_SET_COUNTER(&htim1, 0);
-        speed.actual = Speed*100.0/ SPEED_FULL_SCALE;
+        speed.actual = Speed*100.0 / SPEED_FULL_SCALE;
         PID_Update(&speed);
         if(speed.errorint < -500) {speed.errorint = -500;}
         if(speed.errorint >  500) {speed.errorint =  500;}
       }
-      if (speed.target == 0) speed.errorint = 0;
-      if (speed.out >  0.1 && speed.out <  10) speed.out =  10;
-      if (speed.out < -0.1 && speed.out > -10) speed.out = -10;
+      if (speed.target == 0) {speed.errorint = 0;}
+      if (speed.out >  0.1 && speed.out <  10) {speed.out =  10;}
+      if (speed.out < -0.1 && speed.out > -10) {speed.out = -10;}
       Motor_Set(speed.out);
     //}
     // if (set == 1) {//本来想着反过来电机保持水平，暂时还没搞明白，先留着
@@ -303,9 +303,9 @@ void SystemClock_Config(void)
     //     if(speed.errorint < -500) {speed.errorint = -500;}
     //     if(speed.errorint >  500) {speed.errorint =  500;}
     //   }
-    //   if (speed.target == 0) speed.errorint = 0;
-    //   if (speed.out >  0.1 && speed.out <  10) speed.out =  10;
-    //   if (speed.out < -0.1 && speed.out > -10) speed.out = -10;
+    //   if (speed.target == 0) {speed.errorint = 0;}
+    //   if (speed.out >  0.1 && speed.out <  10) {speed.out =  10;}
+    //   if (speed.out < -0.1 && speed.out > -10) {speed.out = -10;}
     //   Motor_Set(speed.out);
     //   if (place.error0 > -5 && place.error0 < 5)   __HAL_TIM_SET_COUNTER(&htim1, 0);
     // }

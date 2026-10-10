@@ -14,7 +14,7 @@ void Motor_Set(float speed) {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
     }
-    float speed_real = (speed < 0) ? -speed : speed;
+    float speed_real = (speed < 0) ? -speed : speed;//只输入正值
     if (speed_real > 100) {
         speed_real = 100;
     }

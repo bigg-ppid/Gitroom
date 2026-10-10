@@ -57,14 +57,14 @@ int16_t Speed;
 int i,o;
 //int16_t difference = 0;
 PID_t angle = {
-  .Kp = 1.5,
+  .Kp = 1.8,
   .Ki = 0,
   .Kd = 0.2,
   .outmax = 100,
   .outmin = -100,
 };
 PID_t speed = {
-  .Kp = 1.3,
+  .Kp = 1.6,
   .Ki = 0,
   .Kd = 0,
   .outmax = 50,
@@ -149,14 +149,14 @@ int main(void)
       while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET){}
       OLED_ShowString(10, 0, "please select mode", 12, 0);
       OLED_ShowString(2, 5, "mode1", 12, 0);
-      OLED_ShowString(60, 5, "Stay tuned", 12, 0);
+      OLED_ShowString(60, 5, "Stay tuned", 12, 0);//敬请期待
       for (i = 0; i <= 100; i++);
     }
 
     while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_RESET){}//目前只有一个模式，所以只等待B0
     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == GPIO_PIN_SET) {
       OLED_Clear();
-      for (i = 0; i <= 50; i++)
+      for (i = 0; i <= 50; i++)//保持显示50ms
       {
         OLED_ShowString(20, 3, "mode1-balance", 16, 0);
       }
